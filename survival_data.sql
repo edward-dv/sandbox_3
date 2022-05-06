@@ -1,6 +1,8 @@
+-- PREP DATA FOR SURVIVAL MODEL --
 WITH prep AS (
 SELECT 
   DISTINCT user_id
+-- Total weeks since activation date
   , LAST_VALUE(engagement_status) OVER (PARTITION BY user_id ORDER BY transaction_week
    ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) AS current_status
   , MAX(activation_week_index) OVER (PARTITION BY user_id)                              AS weeks_since_activation
@@ -14,11 +16,13 @@ SELECT
       ELSE 0
   END AS churn_flag
   , weeks_since_activation
+  -- More than 1 friend
   , CASE 
       WHEN friends_on_monzo > 0
       THEN 1
       ELSE 0
   END AS friends_flag
+  -- Less than 3- years old
   , CASE 
       WHEN age < 30
       THEN 1
@@ -39,6 +43,7 @@ SELECT
       THEN 1
       ELSE 0
   END AS overdraft_flag
+  -- Total of more than 2 chats
   , CASE 
       WHEN SUM(chat_conversations) OVER (PARTITION BY prep.user_id) > 2
       THEN 1
